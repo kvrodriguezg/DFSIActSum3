@@ -19,7 +19,7 @@ public class UsuarioRepositoryTest {
 
     private Usuario usuarioGuardado;
 
-    //Antes de la prueba
+    //Antes de cada prueba
     @BeforeEach
     void setUp() {
         usuarioRepository.deleteAll();
