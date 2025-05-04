@@ -1,62 +1,90 @@
 package com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.controller;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.model.Usuario;
 import com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.service.UsuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-
-import com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.model.Usuario;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/usuarios")
 @CrossOrigin(origins = "*")
 public class UsuarioController {
 
-    //Se llama servicio
     @Autowired
     private UsuarioService usuarioService;
 
-    //Obtener todos los usuarios
+    //Obtener todos los usuarios con enlaces HATEOAS
     @GetMapping
-    public List<Usuario> getAllUsuarios() {
-        return usuarioService.getAllUsuarios();
+    public CollectionModel<EntityModel<Usuario>> getAllUsuarios() {
+        List<Usuario> usuarios = usuarioService.getAllUsuarios();
+
+        List<EntityModel<Usuario>> usuarioResources = usuarios.stream()
+                .map(usuario -> EntityModel.of(usuario,
+                        WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getUsuarioById(usuario.getId())).withSelfRel()
+                ))
+                .collect(Collectors.toList());
+
+        WebMvcLinkBuilder linkTo =  WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllUsuarios());    
+        CollectionModel<EntityModel<Usuario>> resources = CollectionModel.of(usuarioResources, linkTo.withRel("usuarios"));
+        
+        return resources;
+                
     }
 
-    //Obtener un usuario mediante su id
+    //Obtener un usuario por ID con enlaces HATEOAS
     @GetMapping("/{id}")
-    public Optional<Usuario> getUsuarioById(@PathVariable Long id) {
-        return usuarioService.getUsuarioById(id);
+    public EntityModel<Usuario> getUsuarioById(@PathVariable Long id) {
+        Optional<Usuario> usuario = usuarioService.getUsuarioById(id);
+
+        if (usuario.isPresent()) {
+            return EntityModel.of(usuario.get(),
+                    WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getUsuarioById(id)).withSelfRel(),
+                    WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllUsuarios()).withRel("todos-usuarios")
+            );
+        } else {
+            throw new UsuarioNotFoundException("Usuario no encontrado con id: " + id);
+        }
     }
 
-    //Crear un nuevo usuario
+    //Crear nuevo usuario con enlaces HATEOAS
     @PostMapping
-    public Usuario createUsuario(@RequestBody @Valid Usuario usuario) {
-        return usuarioService.createUsuario(usuario);
+    public EntityModel<Usuario> createUsuario(@RequestBody @Valid Usuario usuario) {
+        Usuario usuarioCreado = usuarioService.createUsuario(usuario);
+
+        return EntityModel.of(usuarioCreado,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getUsuarioById(usuarioCreado.getId())).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllUsuarios()).withRel("todos-usuarios")
+        );
     }
 
-    //Actualizar un usuario
+    //Actualizar usuario con enlaces HATEOAS
     @PutMapping("/{id}")
-    public Usuario updateUsuario(@PathVariable Long id, @RequestBody @Valid Usuario usuario) {
-        return usuarioService.updateUsuario(id, usuario);
+    public EntityModel<Usuario> updateUsuario(@PathVariable Long id, @RequestBody @Valid Usuario usuario) {
+        Optional<Usuario> usuarioIngresado = usuarioService.getUsuarioById(id);
+
+        if (usuarioIngresado.isPresent()) {
+            Usuario usuarioActualizado = usuarioService.updateUsuario(id, usuario);
+
+            return EntityModel.of(usuarioActualizado,
+                    WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getUsuarioById(id)).withSelfRel(),
+                    WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllUsuarios()).withRel("todos-usuarios")
+            );
+        } else {
+            throw new UsuarioNotFoundException("Usuario no encontrado con id: " + id);
+        }
     }
 
-    //Eliminar un usuario
+    //Eliminar usuario
     @DeleteMapping("/{id}")
     public void deleteUsuario(@PathVariable Long id) {
         usuarioService.deleteUsuario(id);
     }
-
 }

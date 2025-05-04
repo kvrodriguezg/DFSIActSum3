@@ -1,23 +1,22 @@
 package com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.controller;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.model.Envio;
 import com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.service.EnvioService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDate;
-import java.util.Optional;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
 public class EnvioControllerTest {
+
+    private MockMvc mockMvc;
 
     @Mock //Se crea un objeto falso (mock)
     private EnvioService envioService;
@@ -25,38 +24,30 @@ public class EnvioControllerTest {
     @InjectMocks //Se crea una instancia de EnvioController y se inyecta el mock de EnvioService
     private EnvioController envioController;
 
-    //Se ejecuta antes de cada prueba
+    //Antes de cada prueba
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this); //Inicializa los mocks
+        //Se inicializan los objetos mock
+        MockitoAnnotations.openMocks(this);
+        //Objeto MockMvc para realizar pruebas
+        mockMvc = MockMvcBuilders.standaloneSetup(envioController).build();
     }
 
-    //Prueba para obtener un envio por su id
+    //Prueba para eliminar un envio
     @Test
-    void testGetEnvioById() {
-        //Crear un Envio de prueba
-        Envio envio = new Envio(
-            "Lima",
-            "Bogotá",
-            LocalDate.of(2025, 5, 1),
-            "En camino",
-            "Centro de distribución Lima",
-            LocalDate.of(2025, 5, 10)
-        );
-        //Setear el id
-        envio.setId(1L);
+    void testEliminarEnvio() throws Exception {
+        //Id del envío a eliminar
+        Long envioId = 1L;
 
-        //Configurar el mock para retornar ese Envio
-        when(envioService.getEnvioById(1L)).thenReturn(Optional.of(envio));
+        //Configurar el mock para que no haga nada al eliminar
+        doNothing().when(envioService).deleteEnvio(envioId);
 
-        //Llamar al método del controlador
-        Optional<Envio> resultado = envioController.getEnvioById(1L);
+        //Realizar la solicitud delete y verificar que el estado sea OK
+        mockMvc.perform(delete("/envios/{id}", envioId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
 
-        //Verificar que el resultado esté presente y tenga datos correctos
-        assertTrue(resultado.isPresent());
-        assertEquals("Lima", resultado.get().getOrigen());
-        assertEquals("Bogotá", resultado.get().getDestino());
-        assertEquals("En camino", resultado.get().getEstado());
+        //Verificar que el método deleteEnvio fue llamado una sola vez y con el id correcto
+        verify(envioService, times(1)).deleteEnvio(envioId);
     }
 }
-

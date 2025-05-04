@@ -6,12 +6,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+
+import org.springframework.hateoas.RepresentationModel;
 //Clase Envio para seguimiento de envios internacionales
 @Entity
 @Table(name = "envio")
 //Orden de salida del json
 @JsonPropertyOrder({ "id", "origen", "destino", "fechaEnvio", "estado", "ubicacionActual", "fechaEstimadaEntrega" })
-public class Envio {
+public class Envio extends RepresentationModel<Envio> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

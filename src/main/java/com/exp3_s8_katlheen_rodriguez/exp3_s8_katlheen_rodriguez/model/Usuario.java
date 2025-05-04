@@ -1,5 +1,7 @@
 package com.exp3_s8_katlheen_rodriguez.exp3_s8_katlheen_rodriguez.model;
 
+import org.springframework.hateoas.RepresentationModel;
+
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +14,7 @@ import jakarta.validation.constraints.Email;
 @Table(name = "usuario")
 //Orden de salida del json
 @JsonPropertyOrder({ "id", "nombre", "rut", "email", "telefono", "direccion", "clave", "mascota" })
-public class Usuario {
+public class Usuario extends RepresentationModel<Usuario>{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
